@@ -2,7 +2,7 @@
 -----------------------------------------
 @Author: JaveleyQAQ 
 @Date: 2025-10-30 11:00
-@Description: 王者营地自动签到
+@Description: 王者营地自动签到3
 图标：https://raw.githubusercontent.com/leiyiyan/resource/main/icons/lhtj.png
 
 [Script]
@@ -115,7 +115,7 @@ async function captureCookie() {
 
   saveAccounts(accounts);
   $.msg('🎉 获取Cookie成功', '', `已保存 ${newData.userName} (${newData.userId || 'no-userId'})`, { icon: ICON });
-  $.msg('',${newData.token},'')
+  $.msg('',`${newData.token}`,'')
 }
 
 // 批量 Node 通知
