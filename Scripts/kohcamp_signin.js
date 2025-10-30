@@ -12,7 +12,6 @@ cron "0 0 * * *" script-path=https://raw.githubusercontent.com/JaveleyQAQ/Loon-c
 [MITM]
 hostname = kohcamp.qq.com
 */
-
 const $ = new Env('kohcamp 营地签到');
 const ckName = 'kohcamp_data';
 const ICON = 'https://raw.githubusercontent.com/leiyiyan/resource/main/icons/lhtj.png';
