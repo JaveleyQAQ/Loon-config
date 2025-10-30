@@ -2,7 +2,7 @@
 -----------------------------------------
 @Author: JaveleyQAQ 
 @Date: 2025-10-30 11:00
-@Description: 王者营地自动签到2
+@Description: 王者营地自动签到21
 图标：https://raw.githubusercontent.com/leiyiyan/resource/main/icons/lhtj.png
 
 [Script]
@@ -138,16 +138,21 @@ async function main() {
   if ($.isNode()) await nodeNotifyAll();
 }
 
-// 入口
 !(async () => {
-  try {
-    if (typeof $request !== 'undefined') await captureCookie();
-    else await main();
-  } catch (e) {
-    $.msg('脚本异常', '', e && e.message ? e.message : String(e));
-  }
+    try {
+        if (typeof $request != "undefined") {
+            await captureCookie();
+        } else {
+            await main();
+        }
+    } catch (e) {
+        throw e;
+    }
 })()
-  .finally(() => { $.done({ ok: 1 }); });
+    .catch((e) => { $.logErr(e), $.msg($.name, `⛔️ script run error!`, e.message || e) })
+    .finally(async () => {
+        $.done({ ok: 1 });
+    });
 
 // ---------- 持久化兼容层 ----------
 function saveAccounts(obj) {
