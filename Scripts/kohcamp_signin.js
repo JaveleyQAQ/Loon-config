@@ -150,7 +150,7 @@ async function main() {
         throw e;
     }
 })()
-    .catch((e) => {  $.msg('脚本异常', '', e && e.message ? e.message : String(e)); )
+    .catch((e) => {  $.msg('脚本异常', '', e && e.message ? e.message : String(e)); )}
     .finally(async () => {
         $.done();
     });
