@@ -2,12 +2,12 @@
 -----------------------------------------
 @Author: JaveleyQAQ 
 @Date: 2025-10-30 11:00
-@Description: 王者营地自动签到3
+@Description: 王者营地自动签到（修正版）
 图标：https://raw.githubusercontent.com/leiyiyan/resource/main/icons/lhtj.png
 
 [Script]
 http-request ^https?:\/\/kohcamp\.qq\.com\/operation\/action\/signinfo script-path=https://raw.githubusercontent.com/JaveleyQAQ/Loon-config/refs/heads/main/Scripts/kohcamp_signin.js, timeout=60, requires-body=true, tag=王者营地获取Cookie
-cron "0 0 * * *" script-path=https://raw.githubusercontent.com/JaveleyQAQ/Loon-config/refs/heads/main/Scripts/kohcamp_signin.js, timeout=60, requires-body=true , tag=王者营地每日签到👋
+cron "0 0 * * *" script-path=https://raw.githubusercontent.com/JaveleyQAQ/Loon-config/refs/heads/main/Scripts/kohcamp_signin.js, timeout=60, tag=王者营地每日签到👋
 
 [MITM]
 hostname = kohcamp.qq.com
@@ -18,18 +18,18 @@ const ICON = 'https://raw.githubusercontent.com/leiyiyan/resource/main/icons/lht
 let accounts = loadAccounts();
 $.notify = [];
 
-// 通用 HTTP 请求
+// 通用 HTTP 请求（使用 Request/环境原生）
 async function http(o) {
   try {
     if (typeof o === 'string') o = { url: o };
-    const res = await Request({ ...o, headers: o.headers || { 'Accept': 'application/json, text/plain, */*', 'Content-Type': 'application/json' }, url: o.url });
+    const res = await Request({ ...o, headers: o.headers || { 'Accept': 'application/json, text/plain, */*' }, url: o.url });
     return res;
   } catch (e) {
     return { __error: true, message: e && e.message ? e.message : String(e) };
   }
 }
 
-// 执行签到
+// 执行签到（body 改为 x-www-form-urlencoded）
 async function doSignin(acc) {
   const url = 'https://kohcamp.qq.com/operation/action/newsignin';
   const headers = {
@@ -38,19 +38,18 @@ async function doSignin(acc) {
     token: acc.token || '',
     userId: acc.userId || '',
     campRoleId: acc.campRoleId || '',
-    cookie: acc.cookie || ''
+    cookie: acc.cookie || '',
+    'Content-Type': 'application/x-www-form-urlencoded'
   };
-  const body = {
-    cSystem: 'ios',
-    h5Get: 1,
-    gameId: '20001',
-    roleId: acc.roleId || acc.campRoleId || ''
-  };
-  const res = await http({ url, type: 'post', dataType: 'json', headers, body });
+  const bodyStr = `cSystem=ios&h5Get=1&gameId=20001&roleId=${encodeURIComponent(acc.roleId || acc.campRoleId || '')}`;
+
+  // 注意：把 body 作为字符串传入，避免框架把它序列化为 JSON
+  const res = await http({ url, type: 'post', dataType: 'json', headers, body: bodyStr });
   let note = '';
   if (!res) note = '请求无响应';
   else if (res.__error) note = '请求错误: ' + res.message;
   else {
+    // Request 可能会把响应放在 res.data 或直接在 res
     const json = res.data ? res.data : (typeof res === 'object' ? res : {});
     const rc = json.returnCode ?? json.code ?? (res.returnCode ?? undefined);
     if (rc === 0) {
@@ -59,7 +58,8 @@ async function doSignin(acc) {
     } else if (rc === -105203 || (json.returnMsg && /请勿重复签到/.test(json.returnMsg))) {
       note = '⛔️ 重复签到: ' + (json.returnMsg || JSON.stringify(json));
     } else {
-      note = '⛔️ 签到失败: ' + (json.returnMsg || JSON.stringify(json));
+      // 如果服务端返回空对象，显示原始响应以便调试
+      note = '⛔️ 签到失败: ' + (json.returnMsg || JSON.stringify(json) || JSON.stringify(res));
     }
   }
   const title = acc.userName ? `${acc.userName} 签到结果` : 'kohcamp 签到结果';
@@ -85,37 +85,53 @@ function extractFromRequest() {
   return { header, bodyObj, q };
 }
 
-// 捕获并保存 cookie/token 等
+// 捕获并保存 cookie/token 等（修正：放行原始请求 $done({})）
 async function captureCookie() {
-  if (typeof $request === 'undefined') return;
-  if ($request && $request.method === 'OPTIONS') return;
-  const url = $request.url || '';
-  if (!/operation\/action\/signinfo/.test(url)) return;
+  try {
+    if (typeof $request === 'undefined') return;
+    if ($request && $request.method === 'OPTIONS') {
+      if (typeof $done === 'function') $done({});
+      return;
+    }
+    const url = $request.url || '';
+    if (!/operation\/action\/signinfo/.test(url)) {
+      if (typeof $done === 'function') $done({});
+      return;
+    }
 
-  const { header, bodyObj, q } = extractFromRequest();
+    const { header, bodyObj, q } = extractFromRequest();
 
-  const newData = {
-    userName: header['x-wx-nickname'] || header['nickname'] || '营地用户',
-    token: header['token'] || bodyObj.token || q.token || '',
-    userId: header['userid'] || header['userId'] || bodyObj.userId || q.userId || '',
-    campRoleId: header['camproleid'] || bodyObj.campRoleId || q.campRoleId || '',
-    roleId: bodyObj.roleId || header['roleid'] || q.roleId || '',
-    cookie: header['cookie'] || '',
-    _raw: $request
-  };
+    const newData = {
+      userName: header['x-wx-nickname'] || header['nickname'] || '营地用户',
+      token: header['token'] || bodyObj.token || q.token || '',
+      userId: header['userid'] || header['userId'] || bodyObj.userId || q.userId || '',
+      campRoleId: header['camproleid'] || bodyObj.campRoleId || q.campRoleId || '',
+      roleId: bodyObj.roleId || header['roleid'] || q.roleId || '',
+      cookie: header['cookie'] || '',
+      _raw: $request
+    };
 
-  if (!newData.token && !newData.userId && !newData.campRoleId) {
-    $.msg('kohcamp 获取信息', '', '未在请求中检测到 token/userId/campRoleId，未保存。', { icon: ICON });
-    return;
+    if (!newData.token && !newData.userId && !newData.campRoleId) {
+      $.msg('kohcamp 获取信息', '', '未在请求中检测到 token/userId/campRoleId，未保存。', { icon: ICON });
+      if (typeof $done === 'function') $done({});
+      return;
+    }
+
+    const idx = accounts.findIndex(a => a.token && newData.token && a.token === newData.token);
+    if (idx !== -1) accounts[idx] = Object.assign({}, accounts[idx], newData);
+    else accounts.push(newData);
+
+    saveAccounts(accounts);
+    $.msg('🎉 获取Cookie成功', '', `已保存 ${newData.userName} (${newData.userId || 'no-userId'})`, { icon: ICON });
+
+  } catch (e) {
+    $.msg('捕获异常', '', String(e), { icon: ICON });
+  } finally {
+    // --------------------------------------------------
+    // **关键：放行原始请求，避免 APP 出现网络错误提示**
+    // --------------------------------------------------
+    try { if (typeof $done === 'function') $done({}); } catch (e) { }
   }
-
-  const idx = accounts.findIndex(a => a.token && newData.token && a.token === newData.token);
-  if (idx !== -1) accounts[idx] = Object.assign({}, accounts[idx], newData);
-  else accounts.push(newData);
-
-  saveAccounts(accounts);
-  $.msg('🎉 获取Cookie成功', '', `已保存 ${newData.userName} (${newData.userId || 'no-userId'})`, { icon: ICON });
-  $.msg('',`${newData.token}`,'')
 }
 
 // 批量 Node 通知
@@ -147,24 +163,25 @@ async function main() {
     $.msg('脚本异常', '', e && e.message ? e.message : String(e));
   }
 })()
-  .finally(() => { $.done({ ok: 1 }); });
+  .finally(() => { try { if (typeof $done === 'function') $done({}); } catch (e) {} });
 
-// ---------- 持久化兼容层 ----------
+// ----------------- 简单持久化（多平台兼容） -----------------
 function saveAccounts(obj) {
   const s = JSON.stringify(obj);
-  try { if (typeof $persistentStore !== 'undefined') return $persistentStore.write(s, ckName); } catch (e) {}
-  try { if (typeof $prefs !== 'undefined' && $prefs.setValue) return $prefs.setValue(s, ckName); } catch (e) {}
-  try { if (typeof $storage !== 'undefined' && $storage.setItem) return $storage.setItem(ckName, s); } catch (e) {}
+  try { if (typeof $prefs !== 'undefined' && $prefs.setValueForKey) return $prefs.setValueForKey(s, ckName); } catch (e) {}
+  try { if (typeof $persistentStore !== 'undefined' && $persistentStore.write) return $persistentStore.write(s, ckName); } catch (e) {}
   try { if (typeof $task !== 'undefined' && $task.set) return $task.set(ckName, s); } catch (e) {}
+  try { if (typeof $storage !== 'undefined' && $storage.setItem) return $storage.setItem(ckName, s); } catch (e) {}
   try { if (typeof localStorage !== 'undefined') return localStorage.setItem(ckName, s); } catch (e) {}
-  // Node 环境不自动写文件，保留 process.env 方案供用户自行扩展
+  // Node 环境：写入环境变量占位（需要用户自行扩展成文件写入）
+  try { if (typeof process !== 'undefined' && process.env) process.env[ckName] = s; } catch (e) {}
 }
 
 function loadAccounts() {
-  try { if (typeof $persistentStore !== 'undefined') { const v = $persistentStore.read(ckName); return v ? JSON.parse(v) : []; } } catch (e) {}
   try { if (typeof $prefs !== 'undefined' && $prefs.valueForKey) { const v = $prefs.valueForKey(ckName); return v ? JSON.parse(v) : []; } } catch (e) {}
-  try { if (typeof $storage !== 'undefined' && $storage.getItem) { const v = $storage.getItem(ckName); return v ? JSON.parse(v) : []; } } catch (e) {}
+  try { if (typeof $persistentStore !== 'undefined' && $persistentStore.read) { const v = $persistentStore.read(ckName); return v ? JSON.parse(v) : []; } } catch (e) {}
   try { if (typeof $task !== 'undefined' && $task.get) { const v = $task.get(ckName); return v ? JSON.parse(v) : []; } } catch (e) {}
+  try { if (typeof $storage !== 'undefined' && $storage.getItem) { const v = $storage.getItem(ckName); return v ? JSON.parse(v) : []; } } catch (e) {}
   try { if (typeof localStorage !== 'undefined') { const v = localStorage.getItem(ckName); return v ? JSON.parse(v) : []; } } catch (e) {}
   try { if (typeof process !== 'undefined' && process.env && process.env[ckName]) return JSON.parse(process.env[ckName]); } catch (e) {}
   return [];
