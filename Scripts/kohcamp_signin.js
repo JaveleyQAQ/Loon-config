@@ -101,7 +101,6 @@ async function captureCookie() {
   $.setjson(accounts, ckName);
   // 使用示例内的通知方式提示
   $.msg('🎉 获取Cookie成功', '', `已保存${newData.userName} (${newData.userId || 'no-userId'}) token:${newData.token} `, { icon: ICON });
-  $.msg(
 }
 
 // 发送 Node 环境下的通知（兼容 sendNotify.js）
