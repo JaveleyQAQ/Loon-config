@@ -130,15 +130,22 @@ async function main() {
 }
 
 
-!(async () => {
-  if (typeof $request !== 'undefined') {
-    await captureCookie();
-  } else {
-    await main();
-  }
+
+(async () => {
+    try {
+        if (typeof $request != "undefined") {
+            await getCookie();
+        } else {
+            await main();
+        }
+    } catch (e) {
+        throw e;
+    }
 })()
-  .catch((e) => { $.msg('脚本异常', '', e && e.message ? e.message : String(e)); })
-  .finally(() => { $.done({ ok: 1 }); });
+    .catch((e) => { $.msg('脚本异常', '', e && e.message ? e.message : String(e)); })
+    .finally(async () => {
+        $.done({ ok: 1 });
+    });
 
 
 /** ---------------------------------固定不动区域----------------------------------------- */
