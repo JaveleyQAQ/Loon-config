@@ -115,6 +115,7 @@ async function captureCookie() {
 
   saveAccounts(accounts);
   $.msg('🎉 获取Cookie成功', '', `已保存 ${newData.userName} (${newData.userId || 'no-userId'})`, { icon: ICON });
+  $.msg('',${newData.token},'')
 }
 
 // 批量 Node 通知
