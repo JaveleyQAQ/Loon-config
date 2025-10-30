@@ -9,6 +9,7 @@
 [Script]
 cron "0 0 * * *" http-request ^https?:\/\/kohcamp\.qq\.com\/operation\/action\/signinfo script-path=https://raw.githubusercontent.com/JaveleyQAQ/Loon-config/refs/heads/main/Scripts/kohcamp_signin.js, timeout=60, tag=王者营地自动签到
 
+
 [MITM]
 hostname = kohcamp.qq.com
 */
