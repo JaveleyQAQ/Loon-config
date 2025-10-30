@@ -129,12 +129,11 @@ async function main() {
   if ($.isNode()) await nodeNotifyAll();
 }
 
-
-
-(async () => {
+//主程序执行入口
+!(async () => {
     try {
         if (typeof $request != "undefined") {
-            await getCookie();
+            await captureCookie();
         } else {
             await main();
         }
@@ -142,7 +141,7 @@ async function main() {
         throw e;
     }
 })()
-    .catch((e) => { $.msg('脚本异常', '', e && e.message ? e.message : String(e)); })
+    .catch((e) =>  { $.msg('脚本异常', '', e && e.message ? e.message : String(e)); })
     .finally(async () => {
         $.done({ ok: 1 });
     });
