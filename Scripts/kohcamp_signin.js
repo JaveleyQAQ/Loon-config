@@ -90,12 +90,12 @@ async function captureCookie() {
   try {
     if (typeof $request === 'undefined') return;
     if ($request && $request.method === 'OPTIONS') {
-      if (typeof $done === 'function') $done({});
+      if (typeof $done === 'function') $done();
       return;
     }
     const url = $request.url || '';
     if (!/operation\/action\/signinfo/.test(url)) {
-      if (typeof $done === 'function') $done({});
+      if (typeof $done === 'function') $done();
       return;
     }
 
@@ -113,7 +113,7 @@ async function captureCookie() {
 
     if (!newData.token && !newData.userId && !newData.campRoleId) {
       $.msg('kohcamp 获取信息', '', '未在请求中检测到 token/userId/campRoleId，未保存。', { icon: ICON });
-      if (typeof $done === 'function') $done({});
+      if (typeof $done === 'function') $done();
       return;
     }
 
@@ -130,7 +130,7 @@ async function captureCookie() {
     // --------------------------------------------------
     // **关键：放行原始请求，避免 APP 出现网络错误提示**
     // --------------------------------------------------
-    try { if (typeof $done === 'function') $done({}); } catch (e) { }
+    try { if (typeof $done === 'function') $done(); } catch (e) { }
   }
 }
 
@@ -163,7 +163,7 @@ async function main() {
     $.msg('脚本异常', '', e && e.message ? e.message : String(e));
   }
 })()
-  .finally(() => { try { if (typeof $done === 'function') $done({}); } catch (e) {} });
+  .finally(() => { try { if (typeof $done === 'function') $done(); } catch (e) {} });
 
 // ----------------- 简单持久化（多平台兼容） -----------------
 function saveAccounts(obj) {
