@@ -8,8 +8,7 @@
 
 [Script]
 http-request ^https?:\/\/kohcamp\.qq\.com\/operation\/action\/signinfo script-path=https://raw.githubusercontent.com/JaveleyQAQ/Loon-config/refs/heads/main/Scripts/kohcamp_signin.js, timeout=60, tag=王者营地获取Cookie
-
-cron "0 0 * * *" script-path=https://raw.githubusercontent.com/JaveleyQAQ/Loon-config/refs/heads/main/Scripts/kohcamp_signin.js, timeout=60, tag=王者营地每日签到
+cron "0 0 * * *" script-path=https://raw.githubusercontent.com/JaveleyQAQ/Loon-config/refs/heads/main/Scripts/kohcamp_signin.js, timeout=60, tag=王者营地每日签到👋
 
 
 [MITM]
